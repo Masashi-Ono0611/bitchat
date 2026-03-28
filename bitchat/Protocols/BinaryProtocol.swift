@@ -88,6 +88,7 @@
 /// - Platform-optimized byte swapping
 ///
 
+import CryptoKit
 import Foundation
 import BitLogger
 
@@ -418,5 +419,57 @@ struct BinaryProtocol {
                 isRSR: isRSR
             )
         }
+    }
+}
+
+// MARK: - TON Payment Payload Codecs
+
+extension BinaryProtocol {
+
+    /// Encode a tonTxAnnounce payload: valid_until (4 bytes BE) + BOC bytes
+    static func encodeTonTxAnnounce(validUntil: UInt32, boc: Data) -> Data {
+        var data = Data(capacity: 4 + boc.count)
+        var vBE = validUntil.bigEndian
+        withUnsafeBytes(of: &vBE) { data.append(contentsOf: $0) }
+        data.append(boc)
+        return data
+    }
+
+    /// Decode a tonTxAnnounce payload. Returns nil if malformed.
+    static func decodeTonTxAnnounce(payload: Data) -> (validUntil: UInt32, boc: Data)? {
+        guard payload.count > 4 else { return nil }
+        let validUntil = payload[0..<4].withUnsafeBytes { $0.load(as: UInt32.self).bigEndian }
+        let boc = Data(payload[4...])
+        return (validUntil, boc)
+    }
+
+    /// Encode a tonTxAck payload: txId (32 bytes) + blockId_len (2 bytes BE) + blockId (UTF-8)
+    static func encodeTonTxAck(txId: Data, blockId: String) -> Data {
+        let blockIdBytes = blockId.data(using: .utf8) ?? Data()
+        var data = Data(capacity: 34 + blockIdBytes.count)
+        data.append(contentsOf: txId.prefix(32))
+        var lenBE = UInt16(blockIdBytes.count).bigEndian
+        withUnsafeBytes(of: &lenBE) { data.append(contentsOf: $0) }
+        data.append(blockIdBytes)
+        return data
+    }
+
+    /// Encode a tonTxReject payload: txId (32 bytes) + reason (1 byte)
+    static func encodeTonTxReject(txId: Data, reason: UInt8) -> Data {
+        var data = Data(capacity: 33)
+        data.append(contentsOf: txId.prefix(32))
+        data.append(reason)
+        return data
+    }
+
+    /// Decode a tonTxReject payload. Returns (txId, reason) or nil if malformed.
+    static func decodeTonTxReject(payload: Data) -> (txId: Data, reason: UInt8)? {
+        guard payload.count >= 33 else { return nil }
+        return (Data(payload[0..<32]), payload[32])
+    }
+
+    /// SHA-256 hash of payload bytes — used as txId for TON transactions
+    static func tonTxId(from payload: Data) -> Data {
+        Data(CryptoKit.SHA256.hash(data: payload))
     }
 }

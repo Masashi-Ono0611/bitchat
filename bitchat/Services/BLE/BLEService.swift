@@ -464,9 +464,14 @@ final class BLEService: NSObject {
     // MARK: - Transport Protocol Conformance
 
     // MARK: Delegates
-    
+
     weak var delegate: BitchatDelegate?
     weak var peerEventsDelegate: TransportPeerEventsDelegate?
+
+    #if os(iOS)
+    /// TON payment event delegate. Set to a `TONViewModel` instance.
+    weak var tonDelegate: TONBLEDelegate?
+    #endif
     
     // MARK: Peer snapshots publisher (non-UI convenience)
     
@@ -890,7 +895,8 @@ final class BLEService: NSObject {
         switch MessageType(rawValue: type) {
         case .noiseEncrypted, .noiseHandshake:
             return true
-        case .none, .announce, .message, .leave, .requestSync, .fragment, .fileTransfer:
+        case .none, .announce, .message, .leave, .requestSync, .fragment, .fileTransfer,
+             .tonTxAnnounce, .tonTxAck, .tonTxReject:
             return false
         }
     }
@@ -3787,7 +3793,12 @@ extension BLEService {
             
         case .leave:
             handleLeave(packet, from: senderID)
-            
+
+        case .tonTxAnnounce, .tonTxAck, .tonTxReject:
+            #if os(iOS)
+            handleTonPayment(packet)
+            #endif
+
         case .none:
             SecureLogger.warning("⚠️ Unknown message type: \(packet.type)", category: .session)
             break
@@ -4590,4 +4601,57 @@ extension BLEService {
         }
         dynamicRSSIThreshold = threshold
     }
+
+    #if os(iOS)
+    // MARK: - TON Payment API
+
+    /// Broadcast a TON payment packet into the BLE mesh.
+    /// - Parameters:
+    ///   - payload: Encoded payload (use `BinaryProtocol.encodeTon*` helpers)
+    ///   - type: `.tonTxAnnounce`, `.tonTxAck`, or `.tonTxReject`
+    func broadcastTonPayload(_ payload: Data, type: MessageType) {
+        let ttl: UInt8 = type == .tonTxAnnounce ? 16 : 8
+        let packet = BitchatPacket(
+            type: type.rawValue,
+            ttl: ttl,
+            senderID: myPeerID,
+            payload: payload
+        )
+        broadcastPacket(packet)
+    }
+
+    // MARK: - TON Payment Handling
+
+    private func handleTonPayment(_ packet: BitchatPacket) {
+        guard let type = MessageType(rawValue: packet.type) else { return }
+        let payload = packet.payload
+
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            switch type {
+            case .tonTxAnnounce:
+                self.tonDelegate?.didReceiveTonTxAnnounce(payload: payload)
+            case .tonTxAck:
+                guard payload.count >= 32 else { return }
+                let txId = Data(payload[0..<32])
+                let blockId: String
+                if payload.count > 34 {
+                    let lenStart = payload.index(payload.startIndex, offsetBy: 32)
+                    let lenEnd = payload.index(lenStart, offsetBy: 2)
+                    let len = payload[lenStart..<lenEnd].withUnsafeBytes { $0.load(as: UInt16.self).bigEndian }
+                    let strEnd = payload.index(lenEnd, offsetBy: Int(len))
+                    blockId = String(data: payload[lenEnd..<strEnd], encoding: .utf8) ?? ""
+                } else {
+                    blockId = ""
+                }
+                self.tonDelegate?.didReceiveTonTxAck(txId: txId, blockId: blockId)
+            case .tonTxReject:
+                guard let (txId, reason) = BinaryProtocol.decodeTonTxReject(payload: payload) else { return }
+                self.tonDelegate?.didReceiveTonTxReject(txId: txId, reason: reason)
+            default:
+                break
+            }
+        }
+    }
+    #endif
 }
