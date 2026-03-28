@@ -80,7 +80,12 @@ enum MessageType: UInt8 {
     // Fragmentation (simplified)
     case fragment = 0x20        // Single fragment type for large messages
     case fileTransfer = 0x22    // Binary file/audio/image payloads
-    
+
+    // TON Payments (0x30–0x32, only propagated by TON-enabled nodes)
+    case tonTxAnnounce = 0x30   // Signed TON transaction BOC
+    case tonTxAck      = 0x31   // Transaction confirmed on TON
+    case tonTxReject   = 0x32   // Transaction rejected
+
     var description: String {
         switch self {
         case .announce: return "announce"
@@ -91,6 +96,9 @@ enum MessageType: UInt8 {
         case .noiseEncrypted: return "noiseEncrypted"
         case .fragment: return "fragment"
         case .fileTransfer: return "fileTransfer"
+        case .tonTxAnnounce: return "tonTxAnnounce"
+        case .tonTxAck: return "tonTxAck"
+        case .tonTxReject: return "tonTxReject"
         }
     }
 }

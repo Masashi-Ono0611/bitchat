@@ -14,6 +14,8 @@
 		A6E3E5722E7703760032EA8A /* BitLogger in Frameworks */ = {isa = PBXBuildFile; productRef = A6E3E5712E7703760032EA8A /* BitLogger */; };
 		A6E3EA7F2E7706720032EA8A /* Tor in Frameworks */ = {isa = PBXBuildFile; productRef = A6E3EA7E2E7706720032EA8A /* Tor */; };
 		A6E3EA812E7706A80032EA8A /* Tor in Frameworks */ = {isa = PBXBuildFile; productRef = A6E3EA802E7706A80032EA8A /* Tor */; };
+		7F0F7F936783466CBA140573 /* TonSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 9B78B62CAAA04728A91F52BF /* TonSwift */; };
+		E633072DE8BD4CE29A814037 /* TonSwift in Frameworks */ = {isa = PBXBuildFile; productRef = CDB666129F7C448CA9CB32F2 /* TonSwift */; };
 		E0A1B2C3D4E5F6012345678D /* relays/online_relays_gps.csv in Resources */ = {isa = PBXBuildFile; fileRef = E0A1B2C3D4E5F6012345678A /* relays/online_relays_gps.csv */; };
 		E0A1B2C3D4E5F6012345678E /* relays/online_relays_gps.csv in Resources */ = {isa = PBXBuildFile; fileRef = E0A1B2C3D4E5F6012345678A /* relays/online_relays_gps.csv */; };
 /* End PBXBuildFile section */
@@ -84,6 +86,12 @@
 			membershipExceptions = (
 				Info.plist,
 				LaunchScreen.storyboard,
+				TON/TONBLEBridge.swift,
+				TON/TONCenterGateway.swift,
+				TON/TONConfig.swift,
+				TON/TONPayView.swift,
+				TON/TONViewModel.swift,
+				TON/TONWallet.swift,
 			);
 			target = 0576A29205865664C0937536 /* bitchat_macOS */;
 		};
@@ -164,6 +172,7 @@
 				A6E3E5702E77036A0032EA8A /* BitLogger in Frameworks */,
 				885BBED78092484A5B069461 /* P256K in Frameworks */,
 				A6E3EA7F2E7706720032EA8A /* Tor in Frameworks */,
+				7F0F7F936783466CBA140573 /* TonSwift in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -303,6 +312,7 @@
 				4EB6BA1B8464F1EA38F4E286 /* P256K */,
 				A6E3E56F2E77036A0032EA8A /* BitLogger */,
 				A6E3EA7E2E7706720032EA8A /* Tor */,
+				9B78B62CAAA04728A91F52BF /* TonSwift */,
 			);
 			productName = bitchat_iOS;
 			productReference = 96D0D41CA19EE5A772AA8434 /* bitchat.app */;
@@ -344,6 +354,7 @@
 				B8C407587481BBB190741C93 /* XCRemoteSwiftPackageReference "swift-secp256k1" */,
 				A6E3E56E2E77036A0032EA8A /* XCLocalSwiftPackageReference "localPackages/BitLogger" */,
 				A6E3EA7D2E7706720032EA8A /* XCLocalSwiftPackageReference "localPackages/Arti" */,
+				BCFAC89C8DDB49429AD70441 /* XCRemoteSwiftPackageReference "ton-swift" */,
 			);
 			preferredProjectObjectVersion = 90;
 			projectDirPath = "";
@@ -926,6 +937,14 @@
 				version = 0.21.1;
 			};
 		};
+		BCFAC89C8DDB49429AD70441 /* XCRemoteSwiftPackageReference "ton-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tonkeeper/ton-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -954,6 +973,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B8C407587481BBB190741C93 /* XCRemoteSwiftPackageReference "swift-secp256k1" */;
 			productName = P256K;
+		};
+		9B78B62CAAA04728A91F52BF /* TonSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BCFAC89C8DDB49429AD70441 /* XCRemoteSwiftPackageReference "ton-swift" */;
+			productName = TonSwift;
+		};
+		CDB666129F7C448CA9CB32F2 /* TonSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BCFAC89C8DDB49429AD70441 /* XCRemoteSwiftPackageReference "ton-swift" */;
+			productName = TonSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

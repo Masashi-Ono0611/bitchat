@@ -314,7 +314,13 @@ final class ChatViewModel: ObservableObject, BitchatDelegate, CommandContextProv
     @Published var isLocationChannelsSheetPresented: Bool = false
     @Published var isAppInfoPresented: Bool = false
     @Published var showScreenshotPrivacyWarning: Bool = false
-    
+
+    #if os(iOS)
+    // MARK: - TON Payment
+    @Published var isTONPayPresented: Bool = false
+    let tonViewModel = TONViewModel()
+    #endif
+
     var timelineStore = PublicTimelineStore(
         meshCap: TransportConfig.meshTimelineCap,
         geohashCap: TransportConfig.geoTimelineCap
@@ -465,7 +471,17 @@ final class ChatViewModel: ObservableObject, BitchatDelegate, CommandContextProv
         loadNickname()
         loadVerifiedFingerprints()
         meshService.delegate = self
-        
+
+        #if os(iOS)
+        // Wire TON payments
+        if let bleService = meshService as? BLEService {
+            bleService.tonDelegate = self
+            tonViewModel.injectIntoBLE = { [weak bleService] payload, type in
+                bleService?.broadcastTonPayload(payload, type: type)
+            }
+        }
+        #endif
+
         // Log startup info
         
         // Log fingerprint after a delay to ensure encryption service is ready
@@ -3887,3 +3903,21 @@ extension ChatViewModel: PublicMessagePipelineDelegate {
         isBatchingPublic = isBatching
     }
 }
+
+#if os(iOS)
+// MARK: - TONBLEDelegate
+
+extension ChatViewModel: TONBLEDelegate {
+    func didReceiveTonTxAnnounce(payload: Data) {
+        Task { await tonViewModel.handleIncomingTonTxAnnounce(payload: payload) }
+    }
+
+    func didReceiveTonTxAck(txId: Data, blockId: String) {
+        tonViewModel.handleTonTxAck(txId: txId, blockId: blockId)
+    }
+
+    func didReceiveTonTxReject(txId: Data, reason: UInt8) {
+        tonViewModel.handleTonTxReject(txId: txId, reason: reason)
+    }
+}
+#endif

@@ -207,6 +207,11 @@ struct ContentView: View {
                 .onAppear { viewModel.isAppInfoPresented = true }
                 .onDisappear { viewModel.isAppInfoPresented = false }
         }
+        #if os(iOS)
+        .sheet(isPresented: $viewModel.isTONPayPresented) {
+            TONPayView(vm: viewModel.tonViewModel)
+        }
+        #endif
         .sheet(isPresented: Binding(
             get: { viewModel.showingFingerprintFor != nil && !showSidebar && viewModel.selectedPrivateChatPeer == nil },
             set: { _ in viewModel.showingFingerprintFor = nil }
@@ -1286,8 +1291,19 @@ struct ContentView: View {
             }()
 
             HStack(spacing: 10) {
+                #if os(iOS)
+                // TON Payment button
+                Button(action: { viewModel.isTONPayPresented = true }) {
+                    Image(systemName: "diamond.fill")
+                        .font(.bitchatSystem(size: 13))
+                        .foregroundColor(TONConfig.active == .testnet ? Color.orange : Color.blue)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Send TON payment")
+                #endif
+
                 // Unread icon immediately to the left of the channel badge (independent from channel button)
-                
+
                 // Unread indicator (now shown on iOS and macOS)
                 if viewModel.hasAnyUnreadMessages {
                     Button(action: { viewModel.openMostRelevantPrivateChat() }) {
